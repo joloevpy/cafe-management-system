@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <h1>Orders</h1>
+
+    <table class="table">
+        <tr>
+            <th>ID</th>
+            <th>Table</th>
+            <th>Status</th>
+            <th>Total</th>
+        </tr>
+
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.table.number }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.total_price }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+{% endblock %}

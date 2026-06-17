@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <h1>Shift Management</h1>
+
+    <a href="{% url 'open_shift' %}" class="btn btn-success mb-3">
+        Open Shift
+    </a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Status</th>
+                <th>Revenue</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for shift in shifts %}
+            <tr>
+                <td>{{ shift.id }}</td>
+
+                <td>
+                    {% if shift.is_open %}
+                        Open
+                    {% else %}
+                        Closed
+                    {% endif %}
+                </td>
+
+                <td>{{ shift.total_revenue }}</td>
+
+                <td>
+                    {% if shift.is_open %}
+                        <a href="{% url 'close_shift' shift.id %}"
+                           class="btn btn-danger">
+                            Close
+                        </a>
+                    {% else %}
+                        Closed
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No shifts found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}
