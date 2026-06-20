@@ -12,3 +12,5 @@ media/
 
 .vscode/
 .idea/
+
+db.sqlite3
