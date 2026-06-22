@@ -6,6 +6,11 @@
 
     <h1>Orders</h1>
 
+    <a href="{% url 'create_order' %}" class="btn btn-success mb-3">
+        Create Order
+    </a>
+
+    {% if orders %}
     <table class="table">
         <tr>
             <th>ID</th>
@@ -18,11 +23,24 @@
         <tr>
             <td>{{ order.id }}</td>
             <td>{{ order.table.number }}</td>
-            <td>{{ order.status }}</td>
+
+            <td>
+                {% if order.status == "completed" %}
+                    <span class="text-success">Completed</span>
+                {% elif order.status == "progress" %}
+                    <span class="text-warning">In Progress</span>
+                {% else %}
+                    <span class="text-secondary">New</span>
+                {% endif %}
+            </td>
+
             <td>{{ order.total_price }}</td>
         </tr>
         {% endfor %}
     </table>
+    {% else %}
+        <p>No orders found.</p>
+    {% endif %}
 
 </div>
 

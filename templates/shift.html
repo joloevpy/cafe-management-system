@@ -6,11 +6,19 @@
 
     <h1>Shift Management</h1>
 
-    <a href="{% url 'open_shift' %}" class="btn btn-success mb-3">
-        Open Shift
-    </a>
+    {% if not shifts or shifts.last.is_open %}
+        <form method="post" action="{% url 'open_shift' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+                Open Shift
+            </button>
+        </form>
+    {% endif %}
+
+    <br>
 
     <table class="table table-bordered">
+
         <thead>
             <tr>
                 <th>ID</th>
@@ -21,15 +29,16 @@
         </thead>
 
         <tbody>
-            {% for shift in shifts %}
+
+        {% for shift in shifts %}
             <tr>
                 <td>{{ shift.id }}</td>
 
                 <td>
                     {% if shift.is_open %}
-                        Open
+                        <span class="text-success">Open</span>
                     {% else %}
-                        Closed
+                        <span class="text-danger">Closed</span>
                     {% endif %}
                 </td>
 
@@ -37,20 +46,24 @@
 
                 <td>
                     {% if shift.is_open %}
-                        <a href="{% url 'close_shift' shift.id %}"
-                           class="btn btn-danger">
-                            Close
-                        </a>
+                        <form method="post" action="{% url 'close_shift' shift.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                Close
+                            </button>
+                        </form>
                     {% else %}
                         Closed
                     {% endif %}
                 </td>
+
             </tr>
-            {% empty %}
+        {% empty %}
             <tr>
                 <td colspan="4">No shifts found.</td>
             </tr>
-            {% endfor %}
+        {% endfor %}
+
         </tbody>
 
     </table>

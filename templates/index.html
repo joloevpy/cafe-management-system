@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
 <div class="container mt-5">
 
     <h1 class="mb-4">Cafe Management System</h1>
@@ -9,21 +8,10 @@
     <p>Welcome to Cafe Management System</p>
 
     <div class="mt-4">
-
-        <a href="{% url 'menu' %}" class="btn btn-primary">
-            Menu
-        </a>
-
-        <a href="{% url 'orders' %}" class="btn btn-success">
-            Orders
-        </a>
-
-        <a href="{% url 'shift' %}" class="btn btn-warning">
-            Shifts
-        </a>
-
+        <a href="{% url 'menu' %}" class="btn btn-primary">Menu</a>
+        <a href="{% url 'orders' %}" class="btn btn-success">Orders</a>
+        <a href="{% url 'shift' %}" class="btn btn-warning">Shifts</a>
     </div>
 
 </div>
-
 {% endblock %}

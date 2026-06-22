@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 
 
 class Shift(models.Model):
@@ -26,11 +27,7 @@ class Table(models.Model):
 
 class MenuItem(models.Model):
     name = models.CharField(max_length=100)
-
-    price = models.DecimalField(
-        max_digits=8,
-        decimal_places=2
-    )
+    price = models.DecimalField(max_digits=8, decimal_places=2)
 
     def __str__(self):
         return self.name
@@ -46,20 +43,21 @@ class PromoCode(models.Model):
 
 class Order(models.Model):
 
-    STATUS_CHOICES = [
-        ("new", "New"),
-        ("progress", "In Progress"),
-        ("completed", "Completed"),
-    ]
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        IN_PROGRESS = "progress", "In Progress"
+        COMPLETED = "completed", "Completed"
 
     shift = models.ForeignKey(
         Shift,
-        on_delete=models.CASCADE
+        on_delete=models.PROTECT,
+        related_name="orders"
     )
 
     table = models.ForeignKey(
         Table,
-        on_delete=models.CASCADE
+        on_delete=models.PROTECT,
+        related_name="orders"
     )
 
     promo_code = models.ForeignKey(
@@ -71,8 +69,8 @@ class Order(models.Model):
 
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
-        default="new"
+        choices=Status.choices,
+        default=Status.NEW
     )
 
     total_price = models.DecimalField(
@@ -81,18 +79,24 @@ class Order(models.Model):
         default=0
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    
     def calculate_total(self):
-        total = 0
+        total = Decimal("0")
 
-        for item in self.orderitem_set.all():
+        items = self.items.select_related("menu_item")
+
+        for item in items:
             total += item.menu_item.price * item.quantity
 
+        if self.promo_code:
+            discount_percent = Decimal(self.promo_code.discount_percent)
+            discount = (total * discount_percent) / Decimal("100")
+            total -= discount
+
         self.total_price = total
-        self.save()
+        self.save(update_fields=["total_price"])
 
     def __str__(self):
         return f"Order {self.id}"
@@ -101,12 +105,13 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="items"
     )
 
     menu_item = models.ForeignKey(
         MenuItem,
-        on_delete=models.CASCADE
+        on_delete=models.PROTECT
     )
 
     quantity = models.PositiveIntegerField(default=1)
@@ -114,6 +119,10 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return self.menu_item.price * self.quantity
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.order.calculate_total()
 
     def __str__(self):
         return f"{self.menu_item.name}"

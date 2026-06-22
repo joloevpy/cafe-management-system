@@ -11,6 +11,19 @@ from .models import (
 admin.site.register(Shift)
 admin.site.register(Table)
 admin.site.register(MenuItem)
-admin.site.register(Order)
 admin.site.register(PromoCode)
 admin.site.register(OrderItem)
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'table',
+        'status',
+        'total_price'
+    )
+
+    readonly_fields = (
+        'total_price',
+    )
