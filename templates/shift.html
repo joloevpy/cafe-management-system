@@ -6,7 +6,9 @@
 
     <h1>Shift Management</h1>
 
-    {% if not shifts or shifts.last.is_open %}
+    {% if shifts and shifts.last.is_open %}
+        <p class="text-warning">Shift already open</p>
+    {% else %}
         <form method="post" action="{% url 'open_shift' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-success">
@@ -42,7 +44,7 @@
                     {% endif %}
                 </td>
 
-                <td>{{ shift.total_revenue }}</td>
+                <td>{{ shift.total_revenue|default:"0.00" }}</td>
 
                 <td>
                     {% if shift.is_open %}

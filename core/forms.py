@@ -1,26 +1,37 @@
 from django import forms
-from .models import Order, MenuItem
+from .models import Order, MenuItem, Shift
+
 
 
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = [
-            'shift',
             'table',
             'promo_code',
             'status'
-        ]
+        ] 
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        shift = Shift.get_active()
+        if not shift:
+            raise forms.ValidationError("No active shift")
+
+        return cleaned_data
 
     def save(self, commit=True):
         order = super().save(commit=False)
 
+      
+        order.shift = Shift.get_active()
+
         if commit:
             order.save()
 
-        order.calculate_total()
-
         return order
+
 
 
 class MenuItemForm(forms.ModelForm):
@@ -34,7 +45,7 @@ class MenuItemForm(forms.ModelForm):
     def clean_price(self):
         price = self.cleaned_data.get('price')
 
-        if price <= 0:
+        if price is None or price <= 0:
             raise forms.ValidationError("Price must be greater than 0")
 
         return price

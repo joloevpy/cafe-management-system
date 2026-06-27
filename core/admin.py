@@ -5,25 +5,45 @@ from .models import (
     MenuItem,
     Order,
     PromoCode,
-    OrderItem
+    OrderItem,
 )
+
 
 admin.site.register(Shift)
 admin.site.register(Table)
 admin.site.register(MenuItem)
 admin.site.register(PromoCode)
-admin.site.register(OrderItem)
+
+
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 1
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
-        'table',
-        'status',
-        'total_price'
+        "id",
+        "table",
+        "status",
+        "total_price",
+        "created_at",
     )
 
     readonly_fields = (
-        'total_price',
+        "created_at",
+        "total_price",
     )
+
+    inlines = [OrderItemInline]
+
+    def save_model(self, request, obj, form, change):
+        if not obj.shift_id:
+            obj.shift = Shift.get_active()
+
+        super().save_model(
+            request,
+            obj,
+            form,
+            change
+        )

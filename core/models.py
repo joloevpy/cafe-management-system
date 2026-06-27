@@ -1,5 +1,6 @@
 from django.db import models
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 
 
 class Shift(models.Model):
@@ -7,14 +8,16 @@ class Shift(models.Model):
     opened_at = models.DateTimeField(auto_now_add=True)
     closed_at = models.DateTimeField(null=True, blank=True)
 
-    total_revenue = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
-
     def __str__(self):
         return f"Shift {self.id}"
+
+    @classmethod
+    def get_active(cls):
+        return cls.objects.filter(is_open=True).first()
+
+    @classmethod
+    def has_active_shift(cls):
+        return cls.objects.filter(is_open=True).exists()
 
 
 class Table(models.Model):
@@ -27,7 +30,10 @@ class Table(models.Model):
 
 class MenuItem(models.Model):
     name = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=8, decimal_places=2)
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2
+    )
 
     def __str__(self):
         return self.name
@@ -36,6 +42,15 @@ class MenuItem(models.Model):
 class PromoCode(models.Model):
     name = models.CharField(max_length=50)
     discount_percent = models.PositiveIntegerField()
+
+    def clean(self):
+        if self.discount_percent > 100:
+            raise ValidationError(
+                {
+                    "discount_percent":
+                    "Discount cannot exceed 100%"
+                }
+            )
 
     def __str__(self):
         return self.name
@@ -73,30 +88,52 @@ class Order(models.Model):
         default=Status.NEW
     )
 
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
     total_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    
     def calculate_total(self):
-        total = Decimal("0")
+        total = Decimal("0.00")
 
-        items = self.items.select_related("menu_item")
+        for item in self.items.all():
+            total += (
+                item.menu_item.price *
+                item.quantity
+            )
 
-        for item in items:
-            total += item.menu_item.price * item.quantity
+        discount = Decimal("0.00")
 
         if self.promo_code:
-            discount_percent = Decimal(self.promo_code.discount_percent)
-            discount = (total * discount_percent) / Decimal("100")
-            total -= discount
+            discount = (
+                total *
+                Decimal(
+                    self.promo_code.discount_percent
+                ) /
+                Decimal("100")
+            )
 
-        self.total_price = total
-        self.save(update_fields=["total_price"])
+        self.total_price = total - discount
+
+        Order.objects.filter(
+            pk=self.pk
+        ).update(
+            total_price=self.total_price
+        )
+
+    def clean(self):
+        if (
+            self.shift_id and
+            not self.shift.is_open
+        ):
+            raise ValidationError(
+                "Cannot create order in closed shift"
+            )
 
     def __str__(self):
         return f"Order {self.id}"
@@ -114,15 +151,28 @@ class OrderItem(models.Model):
         on_delete=models.PROTECT
     )
 
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.PositiveIntegerField(
+        default=1
+    )
 
     @property
     def subtotal(self):
-        return self.menu_item.price * self.quantity
+        return (
+            self.menu_item.price *
+            self.quantity
+        )
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.order.calculate_total()
 
+    def delete(self, *args, **kwargs):
+        order = self.order
+        super().delete(*args, **kwargs)
+        order.calculate_total()
+
     def __str__(self):
-        return f"{self.menu_item.name}"
+        return (
+            f"{self.menu_item.name} x "
+            f"{self.quantity}"
+        )
