@@ -1,48 +1,97 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
 <div class="container mt-4">
-
-    <h2>Create Order</h2>
+    <h2>Создание заказа</h2>
 
     <form method="post" class="mt-3">
         {% csrf_token %}
 
-        
         <div class="mb-3">
             {{ form.table.label_tag }}
             {{ form.table }}
         </div>
 
-        
         <div class="mb-3">
             {{ form.promo_code.label_tag }}
             {{ form.promo_code }}
         </div>
 
-        
         <div class="mb-3">
             {{ form.status.label_tag }}
             {{ form.status }}
         </div>
 
+        <hr>
+
+        <h4>Добавить блюда</h4>
+
+        <div id="items">
+
+            <div class="dish-item">
+
+                <div class="mb-3">
+                    <label>Блюдо</label>
+                    <select name="menu_item" class="form-control">
+                        <option value="">--- Выберите ---</option>
+                        {% for item in menu_items %}
+                        <option value="{{ item.id }}">
+                            {{ item.name }} - {{ item.price }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label>Количество</label>
+                    <input
+                        type="number"
+                        name="quantity"
+                        class="form-control"
+                        value="1"
+                        min="1"
+                    >
+                </div>
+
+            </div>
+
+        </div>
+
+        <button
+            type="button"
+            class="btn btn-success"
+            onclick="addDish()"
+        >
+            Еще блюдо
+        </button>
+
         {% if form.errors %}
-            <div class="alert alert-danger">
+            <div class="alert alert-danger mt-3">
                 {{ form.errors }}
             </div>
         {% endif %}
 
         <button type="submit" class="btn btn-success">
-            Create Order
+            Создать заказ
         </button>
 
         <a href="{% url 'orders' %}" class="btn btn-secondary">
-            Cancel
+            Отмена
         </a>
 
     </form>
-
 </div>
+
+<script>
+function addDish() {
+    let first = document.querySelector('.dish-item');
+    let copy = first.cloneNode(true);
+
+    copy.querySelector('select').value = '';
+    copy.querySelector('input').value = 1;
+
+    document.getElementById('items').appendChild(copy);
+}
+</script>
 
 {% endblock %}
