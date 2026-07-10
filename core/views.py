@@ -4,13 +4,28 @@ from django.db.models import Sum
 from django.views.generic import ListView, CreateView
 from django.urls import reverse_lazy
 
-from.models import MenuItem, Shift, Order, PromoCode, Table, OrderItem
-from.forms import OrderForm, MenuItemForm
+from .models import (
+    MenuItem,
+    Shift,
+    Order,
+    PromoCode,
+    Table,
+    OrderItem
+)
+
+from .forms import (
+    OrderForm,
+    MenuItemForm,
+    PromoCodeForm,
+    TableForm
+)
+
 
 class OrderListView(ListView):
     model = Order
     template_name = 'orders.html'
     context_object_name = 'orders'
+
 
 class OrderCreateView(CreateView):
     model = Order
@@ -25,6 +40,7 @@ class OrderCreateView(CreateView):
 
     def form_valid(self, form):
         shift = Shift.get_active()
+
         if not shift:
             form.add_error(None, "No active shift")
             return self.form_invalid(form)
@@ -50,45 +66,120 @@ class OrderCreateView(CreateView):
 
         return redirect(self.success_url)
 
+
 class MenuItemCreateView(CreateView):
     model = MenuItem
     form_class = MenuItemForm
     template_name = 'create_menu_item.html'
     success_url = reverse_lazy('menu')
 
+
+class PromoCodeCreateView(CreateView):
+    model = PromoCode
+    form_class = PromoCodeForm
+    template_name = 'create_promo_code.html'
+    success_url = reverse_lazy('promo_codes')
+
+
+class TableCreateView(CreateView):
+    model = Table
+    form_class = TableForm
+    template_name = 'create_table.html'
+    success_url = reverse_lazy('tables')
+
+
 def home(request):
-    return render(request, 'index.html')
+    active_shift = Shift.get_active()
+
+    return render(
+        request,
+        'index.html',
+        {
+            'active_shift': active_shift
+        }
+    )
+
 
 def menu_list(request):
     menu_items = MenuItem.objects.all()
-    return render(request, 'menu.html', {'menu_items': menu_items})
+
+    return render(
+        request,
+        'menu.html',
+        {
+            'menu_items': menu_items
+        }
+    )
+
+
+def promo_code_list(request):
+    promo_codes = PromoCode.objects.all()
+
+    return render(
+        request,
+        'promo_codes.html',
+        {
+            'promo_codes': promo_codes
+        }
+    )
+
+
+def table_list(request):
+    tables = Table.objects.all()
+
+    return render(
+        request,
+        'tables.html',
+        {
+            'tables': tables
+        }
+    )
+
 
 def shift_list(request):
     shifts = Shift.objects.all()
-    return render(request, 'shift.html', {'shifts': shifts})
+
+    return render(
+        request,
+        'shift.html',
+        {
+            'shifts': shifts
+        }
+    )
+
 
 def open_shift(request):
     if request.method == "POST":
         if Shift.objects.filter(is_open=True).exists():
             return redirect('shift')
+
         Shift.objects.create(is_open=True)
+
     return redirect('shift')
 
+
 def close_shift(request, shift_id):
-    if request.method!= "POST":
+    if request.method != "POST":
         return redirect('shift')
 
-    shift = get_object_or_404(Shift, id=shift_id)
-    if shift.is_open is False:
+    shift = get_object_or_404(
+        Shift,
+        id=shift_id
+    )
+
+    if not shift.is_open:
         return redirect('shift')
 
     revenue = Order.objects.filter(
         shift=shift,
         status='completed'
-    ).aggregate(total=Sum('total_price'))
+    ).aggregate(
+        total=Sum('total_price')
+    )
 
-    shift.total_revenue = revenue.get("total") or 0
+    shift.total_revenue = revenue.get('total') or 0
     shift.is_open = False
     shift.closed_at = timezone.now()
     shift.save()
+
     return redirect('shift')

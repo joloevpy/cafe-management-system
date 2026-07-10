@@ -1,5 +1,6 @@
 from django import forms
 from .models import Order, MenuItem, Shift
+from .models import PromoCode, Table
 
 
 
@@ -49,3 +50,20 @@ class MenuItemForm(forms.ModelForm):
             raise forms.ValidationError("Price must be greater than 0")
 
         return price
+    
+class PromoCodeForm(forms.ModelForm):
+    class Meta:
+        model = PromoCode
+        fields = [
+            'name',
+            'discount_percent'
+        ]
+
+
+class TableForm(forms.ModelForm):
+    class Meta:
+        model = Table
+        fields = [
+            'number',
+            'is_occupied'
+        ]

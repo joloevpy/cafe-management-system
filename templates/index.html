@@ -6,8 +6,33 @@
 
     <h1 class="mb-4">Cafe Management System</h1>
 
-    <p>Welcome to Cafe Management System</p>
+    {% if active_shift %}
 
+        <div class="alert alert-success">
+            Смена открыта
+        </div>
+
+        <form method="post" action="{% url 'close_shift' active_shift.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                Закрыть смену
+            </button>
+        </form>
+
+    {% else %}
+
+        <div class="alert alert-secondary">
+            Смена закрыта
+        </div>
+
+        <form method="post" action="{% url 'open_shift' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+                Открыть смену
+            </button>
+        </form>
+
+    {% endif %}
 
 </div>
 
